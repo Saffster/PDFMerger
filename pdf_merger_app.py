@@ -1,24 +1,21 @@
-# first run pip install pypdf in a venv
-
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 
 
 class PDFMergerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("PDF Merger")
-        self.root.geometry("500x350")
+        self.root.title("PDF Merger with Table of Contents")
+        self.root.geometry("600x400")
         self.root.resizable(False, False)
 
         self.pdf_files = []
         self.output_path = ""
 
-        title = tk.Label(root, text="PDF Merger", font=("Arial", 18, "bold"))
-        title.pack(pady=15)
+        tk.Label(root, text="PDF Merger", font=("Arial", 18, "bold")).pack(pady=15)
 
-        self.file_list = tk.Listbox(root, width=60, height=8)
+        self.file_list = tk.Listbox(root, width=75, height=10)
         self.file_list.pack(pady=10)
 
         btn_frame = tk.Frame(root)
@@ -29,7 +26,7 @@ class PDFMergerApp:
 
         tk.Button(root, text="Choose Output File", command=self.choose_output, width=25).pack(pady=10)
 
-        self.output_label = tk.Label(root, text="No output file selected", wraplength=450)
+        self.output_label = tk.Label(root, text="No output file selected", wraplength=550)
         self.output_label.pack()
 
         tk.Button(
@@ -77,14 +74,30 @@ class PDFMergerApp:
 
         try:
             writer = PdfWriter()
+            current_page = 0
 
-            for pdf in self.pdf_files:
-                writer.append(pdf)
+            for pdf_path in self.pdf_files:
+                reader = PdfReader(pdf_path)
+
+                file_name = pdf_path.split("/")[-1].replace(".pdf", "")
+
+                writer.add_outline_item(
+                    title=file_name,
+                    page_number=current_page
+                )
+
+                for page in reader.pages:
+                    writer.add_page(page)
+
+                current_page += len(reader.pages)
 
             with open(self.output_path, "wb") as output_file:
                 writer.write(output_file)
 
-            messagebox.showinfo("Success", "PDFs merged successfully!")
+            messagebox.showinfo(
+                "Success",
+                "PDFs merged successfully with an embedded table of contents!"
+            )
 
         except Exception as e:
             messagebox.showerror("Error", f"Something went wrong:\n{e}")
@@ -94,4 +107,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = PDFMergerApp(root)
     root.mainloop()
-    
